@@ -10,6 +10,9 @@ import com.google.common.collect.ImmutableList;
 import com.powsybl.afs.Folder;
 import com.powsybl.afs.storage.AppFileSystemStorage;
 import com.powsybl.afs.storage.NodeId;
+import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
+import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 import com.powsybl.computation.ComputationManager;
 
@@ -269,6 +272,55 @@ public class LocalAppFileSystemStorage implements AppFileSystemStorage {
         if (file != null) {
             return file.getDataSourceAttribute(name);
         }
+        throw new AssertionError();
+    }
+
+    @Override
+    public void createTimeSeries(NodeId nodeId, TimeSeriesMetadata metadata) {
+        throw new AssertionError();
+    }
+
+    @Override
+    public Set<String> getTimeSeriesNames(NodeId nodeId) {
+        Objects.requireNonNull(nodeId);
+        Path path = ((PathNodeId) nodeId).getPath();
+        LocalFile file = scanFile(path, true);
+        if (file != null) {
+            return file.getTimeSeriesNames(nodeId);
+        }
+        throw new AssertionError();
+    }
+
+    @Override
+    public List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
+        Objects.requireNonNull(nodeId);
+        Path path = ((PathNodeId) nodeId).getPath();
+        LocalFile file = scanFile(path, true);
+        if (file != null) {
+            return file.getTimeSeriesMetadata(nodeId, timeSeriesNames);
+        }
+        throw new AssertionError();
+
+    }
+
+    @Override
+    public List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        Objects.requireNonNull(nodeId);
+        Path path = ((PathNodeId) nodeId).getPath();
+        LocalFile file = scanFile(path, true);
+        if (file != null) {
+            return file.getDoubleTimeSeries(nodeId, timeSeriesNames, version);
+        }
+        throw new AssertionError();
+    }
+
+    @Override
+    public void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
+        throw new AssertionError();
+    }
+
+    @Override
+    public void removeAllTimeSeries(NodeId nodeId) {
         throw new AssertionError();
     }
 

@@ -6,6 +6,9 @@
  */
 package com.powsybl.afs.local.storage;
 
+import com.powsybl.afs.storage.NodeId;
+import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 
 import java.util.*;
@@ -27,4 +30,16 @@ public interface LocalFile extends LocalNode {
     Optional<Boolean> getBooleanAttribute(String name);
 
     DataSource getDataSourceAttribute(String name);
+
+    default Set<String> getTimeSeriesNames(NodeId nodeId) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new UnsupportedOperationException("TODO");
+    }
 }

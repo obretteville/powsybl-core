@@ -6,16 +6,16 @@
  */
 package com.powsybl.afs.storage;
 
+import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
+import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -63,6 +63,30 @@ public interface AppFileSystemStorage extends AutoCloseable {
     void setBooleanAttribute(NodeId nodeId, String name, boolean value);
 
     DataSource getDataSourceAttribute(NodeId nodeId, String name);
+
+    default void createTimeSeries(NodeId nodeId, TimeSeriesMetadata metadata) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default Set<String> getTimeSeriesNames(NodeId nodeId) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default void removeAllTimeSeries(NodeId nodeId) {
+        throw new UnsupportedOperationException("TODO");
+    }
 
     NodeId getDependency(NodeId nodeId, String name);
 

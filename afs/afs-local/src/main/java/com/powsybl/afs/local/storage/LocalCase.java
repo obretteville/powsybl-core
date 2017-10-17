@@ -7,6 +7,9 @@
 package com.powsybl.afs.local.storage;
 
 import com.powsybl.afs.ext.base.Case;
+import com.powsybl.afs.storage.NodeId;
+import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 import com.powsybl.iidm.import_.Importer;
 import com.powsybl.iidm.import_.Importers;
@@ -82,5 +85,20 @@ public class LocalCase implements LocalFile {
             default:
                 throw new AssertionError();
         }
+    }
+
+    @Override
+    public Set<String> getTimeSeriesNames(NodeId nodeId) {
+        throw new AssertionError();
+    }
+
+    @Override
+    public List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
+        throw new AssertionError();
+    }
+
+    @Override
+    public List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new AssertionError();
     }
 }

@@ -13,6 +13,9 @@ import com.powsybl.afs.storage.AfsStorageException;
 import com.powsybl.afs.storage.AppFileSystemStorage;
 import com.powsybl.afs.storage.NodeId;
 import com.powsybl.afs.storage.PseudoClass;
+import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
+import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -506,6 +509,36 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
     @Override
     public DataSource getDataSourceAttribute(NodeId nodeId, String name) {
         return new MapDbDataSource(nodeId, name, dataSourceAttributeDataMap, dataSourceAttributeData2Map);
+    }
+
+    @Override
+    public void createTimeSeries(NodeId nodeId, TimeSeriesMetadata metadata) {
+        throw new AssertionError("TODO"); // TODO
+    }
+
+    @Override
+    public Set<String> getTimeSeriesNames(NodeId nodeId) {
+        throw new AssertionError("TODO"); // TODO
+    }
+
+    @Override
+    public List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
+        throw new AssertionError("TODO"); // TODO
+    }
+
+    @Override
+    public List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new AssertionError("TODO"); // TODO
+    }
+
+    @Override
+    public void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
+        throw new AssertionError("TODO"); // TODO
+    }
+
+    @Override
+    public void removeAllTimeSeries(NodeId nodeId) {
+        throw new AssertionError("TODO"); // TODO
     }
 
     @Override
