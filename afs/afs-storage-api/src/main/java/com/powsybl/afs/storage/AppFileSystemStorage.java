@@ -6,9 +6,7 @@
  */
 package com.powsybl.afs.storage;
 
-import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
-import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
-import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
+import com.powsybl.afs.storage.timeseries.*;
 import com.powsybl.commons.datasource.DataSource;
 
 import java.io.InputStream;
@@ -81,6 +79,14 @@ public interface AppFileSystemStorage extends AutoCloseable {
     }
 
     default void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<StringTimeSeries> getStringTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default void addStringTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<StringArrayChunk> chunks) {
         throw new UnsupportedOperationException("TODO");
     }
 

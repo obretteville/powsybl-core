@@ -18,7 +18,7 @@ public class StringPoint extends AbstractPoint {
 
     public StringPoint(int index, long time, String value) {
         super(index, time);
-        this.value = Objects.requireNonNull(value);
+        this.value = value;
     }
 
     public String getValue() {
@@ -34,7 +34,7 @@ public class StringPoint extends AbstractPoint {
     public boolean equals(Object obj) {
         if (obj instanceof StringPoint) {
             StringPoint other = (StringPoint) obj;
-            return index == other.index && time == other.time && value.equals(other.value);
+            return index == other.index && time == other.time && Objects.equals(value, other.value);
         }
         return false;
     }

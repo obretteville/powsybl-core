@@ -8,6 +8,7 @@ package com.powsybl.afs.local.storage;
 
 import com.powsybl.afs.storage.NodeId;
 import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
+import com.powsybl.afs.storage.timeseries.StringTimeSeries;
 import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
 import com.powsybl.commons.datasource.DataSource;
 
@@ -40,6 +41,10 @@ public interface LocalFile extends LocalNode {
     }
 
     default List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    default List<StringTimeSeries> getStringTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
         throw new UnsupportedOperationException("TODO");
     }
 }

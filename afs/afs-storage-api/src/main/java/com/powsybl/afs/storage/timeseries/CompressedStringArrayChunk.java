@@ -39,9 +39,11 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
         uncompressedEstimatedSize = 0;
         for (int i = 0; i < stepValues.length; i++) {
             String stepValue = stepValues[i];
-            int stepLength = stepLengths[i];
-            estimatedSize += stepValue.length() * Character.BYTES + Integer.BYTES;
-            uncompressedEstimatedSize += stepValue.length() * Character.BYTES * stepLength;
+            if (stepValue != null) {
+                int stepLength = stepLengths[i];
+                estimatedSize += stepValue.length() * Character.BYTES + Integer.BYTES;
+                uncompressedEstimatedSize += stepValue.length() * Character.BYTES * stepLength;
+            }
         }
     }
 

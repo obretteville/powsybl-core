@@ -10,9 +10,7 @@ import com.google.common.collect.ImmutableList;
 import com.powsybl.afs.Folder;
 import com.powsybl.afs.storage.AppFileSystemStorage;
 import com.powsybl.afs.storage.NodeId;
-import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
-import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
-import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
+import com.powsybl.afs.storage.timeseries.*;
 import com.powsybl.commons.datasource.DataSource;
 import com.powsybl.computation.ComputationManager;
 
@@ -316,6 +314,22 @@ public class LocalAppFileSystemStorage implements AppFileSystemStorage {
 
     @Override
     public void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
+        throw new AssertionError();
+    }
+
+    @Override
+    public List<StringTimeSeries> getStringTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        Objects.requireNonNull(nodeId);
+        Path path = ((PathNodeId) nodeId).getPath();
+        LocalFile file = scanFile(path, true);
+        if (file != null) {
+            return file.getStringTimeSeries(nodeId, timeSeriesNames, version);
+        }
+        throw new AssertionError();
+    }
+
+    @Override
+    public void addStringTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<StringArrayChunk> chunks) {
         throw new AssertionError();
     }
 
