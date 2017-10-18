@@ -21,6 +21,8 @@ import java.util.stream.StreamSupport;
  */
 public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk implements StringArrayChunk {
 
+    private static final long serialVersionUID = -2593878290935765701L;
+
     private final String[] stepValues;
 
     private int estimatedSize;
@@ -73,10 +75,8 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
         }
     }
 
-    @Override
-    public Stream<StringPoint> stream(TimeSeriesIndex index) {
-        Objects.requireNonNull(index);
-        Iterator<StringPoint> iterator = new Iterator<StringPoint>() {
+    private Iterator<StringPoint> iterator(TimeSeriesIndex index) {
+        return new Iterator<StringPoint>() {
 
             private int i = offset;
             private int step = 0;
@@ -94,8 +94,13 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
                 return point;
             }
         };
+    }
+
+    @Override
+    public Stream<StringPoint> stream(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                iterator,
+                iterator(index),
                 Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
     }
 

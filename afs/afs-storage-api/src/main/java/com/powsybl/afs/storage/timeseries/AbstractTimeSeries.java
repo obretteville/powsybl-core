@@ -48,7 +48,7 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
 
     protected abstract C createGapFillingChunk(int i, int length);
 
-    public Stream<P> stream() {
+    private List<C> fillGap() {
         // sort chunks by offset
         List<C> sortedChunks = chunks.stream()
                 .sorted(Comparator.comparing(C::getOffset))
@@ -86,8 +86,11 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
         if (i < pointCount) {
             repairedChunks.add(createGapFillingChunk(i, pointCount - i));
         }
+        return repairedChunks;
+    }
 
-        return repairedChunks.stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
+    public Stream<P> stream() {
+        return fillGap().stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
     }
 
     public void writeJson(JsonGenerator generator) throws IOException {

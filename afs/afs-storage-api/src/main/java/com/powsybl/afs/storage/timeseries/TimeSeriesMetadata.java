@@ -19,6 +19,8 @@ import java.util.Objects;
  */
 public class TimeSeriesMetadata implements Serializable {
 
+    private static final long serialVersionUID = -4424175272094933109L;
+
     private final String name;
 
     private final TimeSeriesDataType dataType;

@@ -20,6 +20,8 @@ import java.util.stream.Stream;
  */
 public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk implements DoubleArrayChunk {
 
+    private static final long serialVersionUID = 5431660810898713887L;
+
     private final double[] values;
 
     public UncompressedDoubleArrayChunk(int offset, double[] values) {

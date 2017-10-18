@@ -21,6 +21,8 @@ import java.util.stream.StreamSupport;
  */
 public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk implements DoubleArrayChunk {
 
+    private static final long serialVersionUID = 1840086310640360129L;
+
     private final double[] stepValues;
 
     public CompressedDoubleArrayChunk(int offset, int uncompressedLength, double[] stepValues, int[] stepLengths) {
@@ -55,10 +57,8 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
         }
     }
 
-    @Override
-    public Stream<DoublePoint> stream(TimeSeriesIndex index) {
-        Objects.requireNonNull(index);
-        Iterator<DoublePoint> iterator = new Iterator<DoublePoint>() {
+    private Iterator<DoublePoint> iterator(TimeSeriesIndex index) {
+        return new Iterator<DoublePoint>() {
 
             private int i = offset;
             private int step = 0;
@@ -76,8 +76,13 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
                 return point;
             }
         };
+    }
+
+    @Override
+    public Stream<DoublePoint> stream(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
-                iterator,
+                iterator(index),
                 Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
     }
 

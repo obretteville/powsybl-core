@@ -9,12 +9,13 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.stream.Stream;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public interface ArrayChunk<P extends AbstractPoint> {
+public interface ArrayChunk<P extends AbstractPoint> extends Serializable {
 
     /**
      * Get array chunk offset.

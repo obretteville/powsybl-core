@@ -21,6 +21,8 @@ import java.util.stream.Stream;
  */
 public class UncompressedStringArrayChunk extends AbstractUncompressedArrayChunk implements StringArrayChunk {
 
+    private static final long serialVersionUID = 537253601697879237L;
+
     private final String[] values;
 
     private final int estimatedSize;
