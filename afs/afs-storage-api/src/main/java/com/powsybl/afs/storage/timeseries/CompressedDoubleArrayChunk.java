@@ -65,12 +65,12 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
 
             @Override
             public boolean hasNext() {
-                return i < uncompressedLength;
+                return i < offset + uncompressedLength;
             }
 
             @Override
             public DoublePoint next() {
-                DoublePoint point = new DoublePoint(i, index.getInstantAt(i), stepValues[step]);
+                DoublePoint point = new DoublePoint(i, index.getTimeAt(i), stepValues[step]);
                 i += stepLengths[step];
                 step++;
                 return point;

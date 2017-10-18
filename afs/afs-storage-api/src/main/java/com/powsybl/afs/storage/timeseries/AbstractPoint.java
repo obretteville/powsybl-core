@@ -6,7 +6,6 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import java.time.Instant;
 import java.util.Objects;
 
 /**
@@ -16,18 +15,18 @@ public abstract class AbstractPoint {
 
     protected final int index;
 
-    protected final Instant instant;
+    protected final long time;
 
-    protected AbstractPoint(int index, Instant instant) {
+    protected AbstractPoint(int index, long time) {
         this.index = index;
-        this.instant = Objects.requireNonNull(instant);
+        this.time = Objects.requireNonNull(time);
     }
 
     public int getIndex() {
         return index;
     }
 
-    public Instant getInstant() {
-        return instant;
+    public long getTime() {
+        return time;
     }
 }

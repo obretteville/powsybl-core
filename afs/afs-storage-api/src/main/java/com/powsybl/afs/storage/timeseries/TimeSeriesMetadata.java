@@ -9,6 +9,7 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -16,7 +17,7 @@ import java.util.Objects;
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public class TimeSeriesMetadata {
+public class TimeSeriesMetadata implements Serializable {
 
     private final String name;
 
@@ -50,14 +51,15 @@ public class TimeSeriesMetadata {
     }
 
     public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeFieldName("metadata");
         generator.writeStartObject();
         generator.writeStringField("name", name);
         generator.writeStringField("dataType", dataType.name());
         generator.writeFieldName("tags");
         generator.writeStartArray();
         for (Map.Entry<String, String> e : tags.entrySet()) {
+            generator.writeStartObject();
             generator.writeStringField(e.getKey(), e.getValue());
+            generator.writeEndObject();
         }
         generator.writeEndArray();
         generator.writeFieldName("index");

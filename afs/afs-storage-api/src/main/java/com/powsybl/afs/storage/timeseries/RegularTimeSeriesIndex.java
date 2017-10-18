@@ -59,14 +59,6 @@ public class RegularTimeSeriesIndex implements TimeSeriesIndex {
         return spacing;
     }
 
-    public Interval getInterval() {
-        return Interval.of(Instant.ofEpochMilli(startTime), Instant.ofEpochMilli(endTime));
-    }
-
-    public Duration getSpacingDuration() {
-        return Duration.ofMillis(spacing);
-    }
-
     @Override
     public int getFirstVersion() {
         return firstVersion;
@@ -83,13 +75,8 @@ public class RegularTimeSeriesIndex implements TimeSeriesIndex {
     }
 
     @Override
-    public long getEpochMsAt(int point) {
+    public long getTimeAt(int point) {
         return startTime + point * spacing;
-    }
-
-    @Override
-    public Instant getInstantAt(int point) {
-        return Instant.ofEpochMilli(startTime).plus(getSpacingDuration().multipliedBy(point));
     }
 
     @Override
@@ -123,7 +110,7 @@ public class RegularTimeSeriesIndex implements TimeSeriesIndex {
 
     @Override
     public String toString() {
-        return "index(startTime=" + startTime + ", endTime=" + endTime + ", spacing=" + spacing +
-                ", firstVersion=" + firstVersion + ", versionCount=" + versionCount + ")";
+        return "index(startTime=" + Instant.ofEpochMilli(startTime) + ", endTime=" + Instant.ofEpochMilli(endTime) +
+                ", spacing=" + Duration.ofMillis(spacing) + ", firstVersion=" + firstVersion + ", versionCount=" + versionCount + ")";
     }
 }

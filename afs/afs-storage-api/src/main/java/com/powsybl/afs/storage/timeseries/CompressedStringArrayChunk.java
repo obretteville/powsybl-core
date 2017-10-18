@@ -40,9 +40,8 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
         for (int i = 0; i < stepValues.length; i++) {
             String stepValue = stepValues[i];
             int stepLength = stepLengths[i];
-            int size = stepValue.length() * Character.SIZE + Integer.SIZE;
-            estimatedSize += size;
-            uncompressedEstimatedSize += size * stepLength;
+            estimatedSize += stepValue.length() * Character.BYTES + Integer.BYTES;
+            uncompressedEstimatedSize += stepValue.length() * Character.BYTES * stepLength;
         }
     }
 
@@ -82,12 +81,12 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
 
             @Override
             public boolean hasNext() {
-                return i < uncompressedLength;
+                return i < offset + uncompressedLength;
             }
 
             @Override
             public StringPoint next() {
-                StringPoint point = new StringPoint(i, index.getInstantAt(i), stepValues[step]);
+                StringPoint point = new StringPoint(i, index.getTimeAt(i), stepValues[step]);
                 i += stepLengths[step];
                 step++;
                 return point;

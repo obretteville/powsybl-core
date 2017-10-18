@@ -16,8 +16,8 @@ public class StringPoint extends AbstractPoint {
 
     private final String value;
 
-    public StringPoint(int index, Instant instant, String value) {
-        super(index, instant);
+    public StringPoint(int index, long time, String value) {
+        super(index, time);
         this.value = Objects.requireNonNull(value);
     }
 
@@ -27,20 +27,20 @@ public class StringPoint extends AbstractPoint {
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, instant, value);
+        return Objects.hash(index, time, value);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof StringPoint) {
             StringPoint other = (StringPoint) obj;
-            return index == other.index && instant.equals(other.instant) && value.equals(other.value);
+            return index == other.index && time == other.time && value.equals(other.value);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return "StringPoint(" + index + ", " + instant + ", " + value + ")";
+        return "StringPoint(" + index + ", " + Instant.ofEpochMilli(time) + ", " + value + ")";
     }
 }

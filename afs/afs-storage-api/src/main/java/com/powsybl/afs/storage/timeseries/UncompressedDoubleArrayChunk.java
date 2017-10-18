@@ -11,7 +11,6 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -44,7 +43,7 @@ public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk
 
     @Override
     public void fillArray(double[] array) {
-        Arrays.copyOfRange(values, offset, values.length);
+        System.arraycopy(values, 0, array, offset, values.length);
     }
 
     public DoubleArrayChunk tryToCompress() {
@@ -64,7 +63,7 @@ public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk
                     stepLengths.add(1);
                 }
                 // compression is not really interesting...
-                if (stepValues.size() > values.length * 0.40) {
+                if (stepValues.size() > values.length * 0.60) {
                     return this;
                 }
             }
@@ -75,7 +74,7 @@ public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk
     @Override
     public Stream<DoublePoint> stream(TimeSeriesIndex index) {
         Objects.requireNonNull(index);
-        return IntStream.range(0, values.length).mapToObj(i -> new DoublePoint(i, index.getInstantAt(i), values[i]));
+        return IntStream.range(0, values.length).mapToObj(i -> new DoublePoint(offset + i, index.getTimeAt(offset + i), values[i]));
     }
 
     @Override

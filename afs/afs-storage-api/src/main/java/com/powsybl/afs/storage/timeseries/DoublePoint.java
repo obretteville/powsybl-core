@@ -16,8 +16,8 @@ public class DoublePoint extends AbstractPoint {
 
     private final double value;
 
-    public DoublePoint(int index, Instant instant, double value) {
-        super(index, instant);
+    public DoublePoint(int index, long time, double value) {
+        super(index, time);
         this.value = value;
     }
 
@@ -27,20 +27,21 @@ public class DoublePoint extends AbstractPoint {
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, instant, value);
+        return Objects.hash(index, time, value);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof DoublePoint) {
             DoublePoint other = (DoublePoint) obj;
-            return index == other.index && instant.equals(other.instant) && value == other.value;
+            return index == other.index && time == other.time
+                    && ((Double.isNaN(value) && Double.isNaN(other.value)) || value == other.value);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return "DoublePoint(" + index + ", " + instant + ", " + value + ")";
+        return "DoublePoint(" + index + ", " + Instant.ofEpochMilli(time) + ", " + value + ")";
     }
 }

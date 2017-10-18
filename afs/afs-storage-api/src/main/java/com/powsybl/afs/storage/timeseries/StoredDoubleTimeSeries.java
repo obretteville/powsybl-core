@@ -16,10 +16,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +28,10 @@ public class StoredDoubleTimeSeries implements DoubleTimeSeries {
     private final TimeSeriesMetadata metadata;
 
     private final List<DoubleArrayChunk> chunks;
+
+    public StoredDoubleTimeSeries(TimeSeriesMetadata metadata, DoubleArrayChunk... chunks) {
+        this(metadata, Arrays.asList(chunks));
+    }
 
     public StoredDoubleTimeSeries(TimeSeriesMetadata metadata, List<DoubleArrayChunk> chunks) {
         this.metadata = Objects.requireNonNull(metadata);
@@ -48,27 +49,47 @@ public class StoredDoubleTimeSeries implements DoubleTimeSeries {
 
     @Override
     public Stream<DoublePoint> stream() {
-        // check chunk consistency
-        //   - all included in index range
-        //   - no chunk overlap
-        //   - no missing points
-        List<DoubleArrayChunk> sortedChunks = chunks.stream().sorted(Comparator.comparing(DoubleArrayChunk::getOffset)).collect(Collectors.toList());
+        // sort chunks by offset
+        List<DoubleArrayChunk> sortedChunks = chunks.stream()
+                .sorted(Comparator.comparing(DoubleArrayChunk::getOffset))
+                .collect(Collectors.toList());
         int pointCount = metadata.getIndex().getPointCount();
         int i = 0;
+        List<DoubleArrayChunk> repairedChunks = new ArrayList<>(sortedChunks.size());
         for (DoubleArrayChunk chunk : sortedChunks) {
-            if (chunk.getOffset() != i) {
-                throw new AfsStorageException("No value found in range [" + i + ", " + chunk.getOffset() + "]");
+            // check chunk offset is included in index range
+            if (chunk.getOffset() > pointCount - 1) {
+                throw new AfsStorageException("Chunk offset " + chunk.getOffset() + " is out of index range [" + (pointCount - 1) +
+                        ", " + (i + chunk.getLength()) + "]");
             }
+
+            // check chunk overlap
+            if (chunk.getOffset() < i) {
+                throw new AfsStorageException("Chunk at offset " + chunk.getOffset() + " overlap with previous one");
+            }
+
+            // check all values are included in index range
             if (i + chunk.getLength() > pointCount - 1) {
-                throw new AfsStorageException("Value(s) found out of index range [" + (pointCount - 1) + ", " + (i + chunk.getLength()) + "]");
+                throw new AfsStorageException("Chunk value at " + (i + chunk.getLength()) + " is out of index range [" +
+                        (pointCount - 1) + ", " + (i + chunk.getLength()) + "]");
             }
+
+            // fill with NaN if there is a gap with previous chunk
+            if (chunk.getOffset() > i) {
+                repairedChunks.add(new CompressedDoubleArrayChunk(i, chunk.getOffset() - i, new double[] {Double.NaN},
+                                                                  new int[] {chunk.getOffset() - i}));
+                i = chunk.getOffset();
+            }
+            repairedChunks.add(chunk);
+
             i += chunk.getLength();
         }
-        if (i < pointCount - 1) {
-            throw new AfsStorageException("No value found in range [" + i + ", " + (pointCount - 1) + "]");
+        if (i < pointCount) {
+            repairedChunks.add(new CompressedDoubleArrayChunk(i, pointCount - i, new double[] {Double.NaN},
+                                                              new int[] {pointCount - i}));
         }
 
-        return sortedChunks.stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
+        return repairedChunks.stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
     }
 
     @Override
@@ -80,8 +101,8 @@ public class StoredDoubleTimeSeries implements DoubleTimeSeries {
     }
 
     public void writeJson(JsonGenerator generator) throws IOException {
-        generator.useDefaultPrettyPrinter();
         generator.writeStartObject();
+        generator.writeFieldName("metadata");
         metadata.writeJson(generator);
         generator.writeFieldName("chunks");
         generator.writeStartArray();
@@ -95,6 +116,7 @@ public class StoredDoubleTimeSeries implements DoubleTimeSeries {
     public void writeJson(BufferedWriter writer) throws IOException {
         JsonFactory factory = new JsonFactory();
         try (JsonGenerator generator = factory.createGenerator(writer)) {
+            generator.useDefaultPrettyPrinter();
             writeJson(generator);
         }
     }

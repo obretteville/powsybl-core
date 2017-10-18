@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.Instant;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -23,9 +22,7 @@ public interface TimeSeriesIndex extends Serializable {
 
     int getVersionCount();
 
-    long getEpochMsAt(int point);
-
-    Instant getInstantAt(int point);
+    long getTimeAt(int point);
 
     void writeJson(JsonGenerator generator) throws IOException;
 }

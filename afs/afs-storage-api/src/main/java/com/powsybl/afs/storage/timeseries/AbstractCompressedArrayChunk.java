@@ -42,9 +42,6 @@ public abstract class AbstractCompressedArrayChunk {
         if (stepValuesLength < 1) {
             throw new IllegalArgumentException("Bad step arrays length " + stepValuesLength);
         }
-        if (stepValuesLength > uncompressedLength) {
-            throw new IllegalArgumentException("Step arrays length is greater than uncompressed length");
-        }
     }
 
     public int[] getStepLengths() {
