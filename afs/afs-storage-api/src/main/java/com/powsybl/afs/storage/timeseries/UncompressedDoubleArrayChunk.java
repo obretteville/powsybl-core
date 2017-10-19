@@ -44,6 +44,11 @@ public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk
     }
 
     @Override
+    public TimeSeriesDataType getDataType() {
+        return TimeSeriesDataType.DOUBLE;
+    }
+
+    @Override
     public void fillArray(double[] array) {
         System.arraycopy(values, 0, array, offset, values.length);
     }

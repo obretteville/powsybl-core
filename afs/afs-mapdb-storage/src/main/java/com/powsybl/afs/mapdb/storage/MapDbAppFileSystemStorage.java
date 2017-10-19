@@ -13,9 +13,7 @@ import com.powsybl.afs.storage.AfsStorageException;
 import com.powsybl.afs.storage.AppFileSystemStorage;
 import com.powsybl.afs.storage.NodeId;
 import com.powsybl.afs.storage.PseudoClass;
-import com.powsybl.afs.storage.timeseries.DoubleArrayChunk;
-import com.powsybl.afs.storage.timeseries.DoubleTimeSeries;
-import com.powsybl.afs.storage.timeseries.TimeSeriesMetadata;
+import com.powsybl.afs.storage.timeseries.*;
 import com.powsybl.commons.datasource.DataSource;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -24,6 +22,7 @@ import org.mapdb.Serializer;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -32,7 +31,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
 
     public static MapDbAppFileSystemStorage createHeap(String fileSystemName) {
         DBMaker.Maker maker = DBMaker.heapDB();
-        return new MapDbAppFileSystemStorage(fileSystemName, maker, () -> maker.make());
+        return new MapDbAppFileSystemStorage(fileSystemName, maker, maker::make);
     }
 
     public static MapDbAppFileSystemStorage createMmapFile(String fileSystemName, File dbFile) {
@@ -70,8 +69,8 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof NamedLink) {
-                NamedLink childNode = (NamedLink) obj;
-                return nodeId.equals(childNode.nodeId) && name.equals(childNode.name);
+                NamedLink other = (NamedLink) obj;
+                return nodeId.equals(other.nodeId) && name.equals(other.name);
             }
             return false;
         }
@@ -106,6 +105,78 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         }
     }
 
+    private static final class TimeSeriesKey implements Serializable {
+
+        private static final long serialVersionUID = -7403590270598848073L;
+
+        private final NodeId nodeId;
+
+        private final int version;
+
+        private final String timeSeriesName;
+
+        private TimeSeriesKey(NodeId nodeId, int version, String timeSeriesName) {
+            this.nodeId = Objects.requireNonNull(nodeId);
+            this.version = version;
+            this.timeSeriesName = Objects.requireNonNull(timeSeriesName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(nodeId, version, timeSeriesName);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TimeSeriesKey) {
+                TimeSeriesKey other = (TimeSeriesKey) obj;
+                return nodeId.equals(other.nodeId) &&
+                        version == other.version &&
+                        timeSeriesName.equals(other.timeSeriesName);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "TimeSeriesKey(nodeId=" + nodeId + ", " + version + ", " + timeSeriesName + ")";
+        }
+    }
+
+    private static final class TimeSeriesChunkKey implements Serializable {
+
+        private static final long serialVersionUID = -6118770840872733294L;
+
+        private final TimeSeriesKey timeSeriesKey;
+
+        private final int chunk;
+
+        private TimeSeriesChunkKey(TimeSeriesKey timeSeriesKey, int chunk) {
+            this.timeSeriesKey = Objects.requireNonNull(timeSeriesKey);
+            this.chunk = chunk;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(timeSeriesKey, chunk);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TimeSeriesChunkKey) {
+                TimeSeriesChunkKey other = (TimeSeriesChunkKey) obj;
+                return timeSeriesKey.equals(other.timeSeriesKey) &&
+                        chunk == other.chunk;
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return "TimeSeriesChunkKey(key=" + timeSeriesKey + ", chunk=" + chunk + ")";
+        }
+    }
+
     private final ConcurrentMap<String, NodeId> rootNodeMap;
 
     private final ConcurrentMap<NodeId, List<NodeId>> childNodesMap;
@@ -135,6 +206,16 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
     private final ConcurrentMap<MapDbDataSource.Key, byte[]> dataSourceAttributeDataMap;
 
     private final ConcurrentMap<String, byte[]> dataSourceAttributeData2Map;
+
+    private final ConcurrentMap<NodeId, Set<String>> timeSeriesNamesMap;
+
+    private final ConcurrentMap<NamedLink, TimeSeriesMetadata> timeSeriesMetadataMap;
+
+    private final ConcurrentMap<TimeSeriesKey, Integer> timeSeriesLastChunkMap;
+
+    private final ConcurrentMap<TimeSeriesChunkKey, DoubleArrayChunk> doubleTimeSeriesChunksMap;
+
+    private final ConcurrentMap<TimeSeriesChunkKey, StringArrayChunk> stringTimeSeriesChunksMap;
 
     private final ConcurrentMap<NodeId, List<NodeId>> dependencyNodesMap;
 
@@ -210,6 +291,26 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
                 .hashMap("dataSourceAttributeData2", Serializer.STRING, Serializer.BYTE_ARRAY)
                 .createOrOpen();
 
+        timeSeriesNamesMap = this.db
+                .hashMap("timeSeriesNamesMap", Serializer.JAVA, Serializer.JAVA)
+                .createOrOpen();
+
+        timeSeriesMetadataMap = this.db
+                .hashMap("timeSeriesMetadataMap", Serializer.JAVA, Serializer.JAVA)
+                .createOrOpen();
+
+        timeSeriesLastChunkMap = this.db
+                .hashMap("timeSeriesLastChunkMap", Serializer.JAVA, Serializer.INTEGER)
+                .createOrOpen();
+
+        doubleTimeSeriesChunksMap = this.db
+                .hashMap("doubleTimeSeriesChunksMap", Serializer.JAVA, Serializer.JAVA)
+                .createOrOpen();
+
+        stringTimeSeriesChunksMap = this.db
+                .hashMap("stringTimeSeriesChunksMap", Serializer.JAVA, Serializer.JAVA)
+                .createOrOpen();
+
         dependencyNodesMap = this.db
                 .hashMap("dependencyNodes", Serializer.JAVA, Serializer.JAVA)
                 .createOrOpen();
@@ -273,12 +374,16 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         return rootNodeMap.get("rootNode");
     }
 
+    private AfsStorageException createNodeNotFoundException(NodeId nodeId) {
+        return new AfsStorageException("Node " + nodeId + " not found");
+    }
+
     @Override
     public String getNodeName(NodeId nodeId) {
         Objects.requireNonNull(nodeId);
         String name = nodeNameMap.get(nodeId);
         if (name == null) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return name;
     }
@@ -288,7 +393,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         List<NodeId> childNodes = childNodesMap.get(nodeId);
         if (childNodes == null) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return childNodes;
     }
@@ -307,7 +412,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
     public NodeId getParentNode(NodeId nodeId) {
         Objects.requireNonNull(nodeId);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return parentNodeMap.get(nodeId);
     }
@@ -317,7 +422,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         Objects.requireNonNull(newParentNodeId);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         if (!nodeNameMap.containsKey(newParentNodeId)) {
             throw new AfsStorageException("New parent node " + newParentNodeId + " not found");
@@ -376,7 +481,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         String nodePseudoClass = nodePseudoClassMap.get(nodeId);
         if (nodePseudoClass == null) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return nodePseudoClass;
     }
@@ -423,7 +528,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         Objects.requireNonNull(name);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return map.get(new NamedLink(nodeId, name));
     }
@@ -432,7 +537,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         Objects.requireNonNull(name);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         NamedLink namedLink = new NamedLink(nodeId, name);
         if (value == null) {
@@ -513,32 +618,144 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
 
     @Override
     public void createTimeSeries(NodeId nodeId, TimeSeriesMetadata metadata) {
-        throw new AssertionError("TODO"); // TODO
+        Objects.requireNonNull(nodeId);
+        Objects.requireNonNull(metadata);
+        if (!nodeNameMap.containsKey(nodeId)) {
+            throw createNodeNotFoundException(nodeId);
+        }
+        Set<String> names = timeSeriesNamesMap.get(nodeId);
+        if (names == null) {
+            names = new HashSet<>();
+        }
+        if (names.contains(metadata.getName())) {
+            throw new AfsStorageException("Time series " + metadata.getName() + " already exists at node " + nodeId);
+        }
+        timeSeriesNamesMap.put(nodeId, add(names, metadata.getName()));
+        timeSeriesMetadataMap.put(new NamedLink(nodeId, metadata.getName()), metadata);
     }
 
     @Override
     public Set<String> getTimeSeriesNames(NodeId nodeId) {
-        throw new AssertionError("TODO"); // TODO
+        Objects.requireNonNull(nodeId);
+        Set<String> names = timeSeriesNamesMap.get(nodeId);
+        if (names == null) {
+            throw createNodeNotFoundException(nodeId);
+        }
+        return names;
+    }
+
+    private static AfsStorageException createTimeSeriesNotFoundAtNode(String timeSeriesName, NodeId nodeId) {
+        return new AfsStorageException("Time series " + timeSeriesName + " not found at node " + nodeId);
     }
 
     @Override
     public List<TimeSeriesMetadata> getTimeSeriesMetadata(NodeId nodeId, Set<String> timeSeriesNames) {
-        throw new AssertionError("TODO"); // TODO
+        Objects.requireNonNull(nodeId);
+        Objects.requireNonNull(timeSeriesNames);
+        List<TimeSeriesMetadata> metadataList = new ArrayList<>();
+        for (String timeSeriesName : timeSeriesNames) {
+            TimeSeriesMetadata metadata = timeSeriesMetadataMap.get(new NamedLink(nodeId, timeSeriesName));
+            if (metadata == null) {
+                throw createTimeSeriesNotFoundAtNode(timeSeriesName, nodeId);
+            }
+            metadataList.add(metadata);
+        }
+        return metadataList;
+    }
+
+    private static void checkVersion(int version) {
+        if (version < 0) {
+            throw new IllegalArgumentException("Bad version " + version);
+        }
+    }
+
+    private <P extends AbstractPoint, C extends ArrayChunk<P>, T extends TimeSeries<P>> List<T> getTimeSeries(NodeId nodeId,
+                                                                                                              Set<String> timeSeriesNames,
+                                                                                                              int version,
+                                                                                                              ConcurrentMap<TimeSeriesChunkKey, C> map,
+                                                                                                              BiFunction<TimeSeriesMetadata, List<C>, T> constr) {
+        Objects.requireNonNull(nodeId);
+        Objects.requireNonNull(timeSeriesNames);
+        checkVersion(version);
+        Objects.requireNonNull(map);
+        Objects.requireNonNull(constr);
+        List<T> timeSeriesList = new ArrayList<>();
+        for (String timeSeriesName : timeSeriesNames) {
+            TimeSeriesMetadata metadata = timeSeriesMetadataMap.get(new NamedLink(nodeId, timeSeriesName));
+            if (metadata == null) {
+                throw createTimeSeriesNotFoundAtNode(timeSeriesName, nodeId);
+            }
+            TimeSeriesKey key = new TimeSeriesKey(nodeId, version, timeSeriesName);
+            Integer lastChunkNum = timeSeriesLastChunkMap.get(key);
+            if (lastChunkNum != null) {
+                List<C> chunks = new ArrayList<>(lastChunkNum + 1);
+                for (int chunkNum = 0; chunkNum <= lastChunkNum; chunkNum++) {
+                    C chunk = map.get(new TimeSeriesChunkKey(key, chunkNum));
+                    if (chunk == null) {
+                        throw new AssertionError("chunk is null");
+                    }
+                    chunks.add(chunk);
+                }
+                timeSeriesList.add(constr.apply(metadata, chunks));
+            }
+        }
+        return timeSeriesList;
+    }
+
+    private <P extends AbstractPoint, C extends ArrayChunk<P>> void addTimeSeriesData(NodeId nodeId,
+                                                                                      int version,
+                                                                                      String timeSeriesName,
+                                                                                      List<C> chunks,
+                                                                                      ConcurrentMap<TimeSeriesChunkKey, C> map) {
+        Objects.requireNonNull(nodeId);
+        checkVersion(version);
+        Objects.requireNonNull(timeSeriesName);
+        Objects.requireNonNull(chunks);
+        Objects.requireNonNull(map);
+        for (C chunk : chunks) {
+            TimeSeriesKey key = new TimeSeriesKey(nodeId, version, timeSeriesName);
+            Integer lastNum = timeSeriesLastChunkMap.get(key);
+            int num;
+            if (lastNum == null) {
+                num = 0;
+            } else {
+                num = lastNum + 1;
+            }
+            timeSeriesLastChunkMap.put(key, num);
+            map.put(new TimeSeriesChunkKey(key, num), chunk);
+        }
     }
 
     @Override
     public List<DoubleTimeSeries> getDoubleTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
-        throw new AssertionError("TODO"); // TODO
+        return getTimeSeries(nodeId, timeSeriesNames, version, doubleTimeSeriesChunksMap, StoredDoubleTimeSeries::new);
     }
 
     @Override
     public void addDoubleTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<DoubleArrayChunk> chunks) {
-        throw new AssertionError("TODO"); // TODO
+        addTimeSeriesData(nodeId, version, timeSeriesName, chunks, doubleTimeSeriesChunksMap);
+    }
+
+    @Override
+    public List<StringTimeSeries> getStringTimeSeries(NodeId nodeId, Set<String> timeSeriesNames, int version) {
+        return getTimeSeries(nodeId, timeSeriesNames, version, stringTimeSeriesChunksMap, StringTimeSeries::new);
+    }
+
+    @Override
+    public void addStringTimeSeriesData(NodeId nodeId, int version, String timeSeriesName, List<StringArrayChunk> chunks) {
+        addTimeSeriesData(nodeId, version, timeSeriesName, chunks, stringTimeSeriesChunksMap);
     }
 
     @Override
     public void removeAllTimeSeries(NodeId nodeId) {
-        throw new AssertionError("TODO"); // TODO
+        Objects.requireNonNull(nodeId);
+        Set<String> names = timeSeriesNamesMap.get(nodeId);
+        if (names != null) {
+            for (String name : names) {
+                timeSeriesMetadataMap.remove(new NamedLink(nodeId, name));
+            }
+            timeSeriesNamesMap.remove(nodeId);
+        }
     }
 
     @Override
@@ -546,7 +763,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(projectNodeId);
         NodeId projectRootNodeId = projectRootNodeMap.get(projectNodeId);
         if (projectRootNodeId == null) {
-            throw new AfsStorageException("Node " + projectNodeId + " not found");
+            throw createNodeNotFoundException(projectNodeId);
         }
         return projectRootNodeId;
     }
@@ -556,7 +773,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         Objects.requireNonNull(name);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return dependencyNodeMap.get(new NamedLink(nodeId, name));
     }
@@ -567,10 +784,10 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(name);
         Objects.requireNonNull(toNodeId);
         if (!nodeNameMap.containsKey(nodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         if (!nodeNameMap.containsKey(toNodeId)) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(toNodeId);
         }
         dependencyNodesMap.put(nodeId, add(dependencyNodesMap.get(nodeId), toNodeId));
         dependencyNodeMap.put(new NamedLink(nodeId, name), toNodeId);
@@ -586,7 +803,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         List<NodeId> dependencyNodeIds = dependencyNodesMap.get(nodeId);
         if (dependencyNodeIds == null) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return dependencyNodeIds;
     }
@@ -596,7 +813,7 @@ public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
         Objects.requireNonNull(nodeId);
         List<NodeId> backwardDependencyNodeIds = backwardDependencyNodesMap.get(nodeId);
         if (backwardDependencyNodeIds == null) {
-            throw new AfsStorageException("Node " + nodeId + " not found");
+            throw createNodeNotFoundException(nodeId);
         }
         return backwardDependencyNodeIds;
     }

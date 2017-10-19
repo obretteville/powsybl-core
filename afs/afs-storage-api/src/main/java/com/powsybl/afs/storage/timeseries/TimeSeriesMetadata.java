@@ -68,4 +68,21 @@ public class TimeSeriesMetadata implements Serializable {
         index.writeJson(generator);
         generator.writeEndObject();
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, dataType, tags, index);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TimeSeriesMetadata) {
+            TimeSeriesMetadata other = (TimeSeriesMetadata) obj;
+            return name.equals(other.name) &&
+                    dataType == other.dataType &&
+                    tags.equals(other.tags) &&
+                    index.equals(other.index);
+        }
+        return false;
+    }
 }

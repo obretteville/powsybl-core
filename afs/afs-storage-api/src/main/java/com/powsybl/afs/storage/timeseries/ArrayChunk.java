@@ -48,6 +48,12 @@ public interface ArrayChunk<P extends AbstractPoint> extends Serializable {
     boolean isCompressed();
 
     /**
+     * Get data type.
+     * @return the data type
+     */
+    TimeSeriesDataType getDataType();
+
+    /**
      * Get a point stream.
      * @param index the time series index
      * @return a point stream

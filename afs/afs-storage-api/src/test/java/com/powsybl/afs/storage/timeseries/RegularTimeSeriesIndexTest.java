@@ -9,6 +9,7 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.testing.EqualsTester;
+import com.google.common.testing.SerializableTester;
 import org.junit.Test;
 import org.threeten.extra.Interval;
 
@@ -28,6 +29,8 @@ public class RegularTimeSeriesIndexTest {
     public void test() throws IOException {
         RegularTimeSeriesIndex index = RegularTimeSeriesIndex.create(Interval.parse("2015-01-01T00:00:00Z/2015-01-01T01:00:00Z"),
                                                                      Duration.ofMinutes(15), 1, 1);
+
+        // test getters
         assertEquals("2015-01-01T00:00:00Z", Instant.ofEpochMilli(index.getStartTime()).toString());
         assertEquals("2015-01-01T01:00:00Z", Instant.ofEpochMilli(index.getEndTime()).toString());
         assertEquals(15 * 60 * 1000, index.getSpacing());
@@ -35,8 +38,12 @@ public class RegularTimeSeriesIndexTest {
         assertEquals(1, index.getVersionCount());
         assertEquals(5, index.getPointCount());
         assertEquals(Instant.ofEpochMilli(index.getStartTime() + 15 * 60 * 1000).toEpochMilli(), index.getTimeAt(1));
+
+        // test to string
         assertEquals("index(startTime=2015-01-01T00:00:00Z, endTime=2015-01-01T01:00:00Z, spacing=PT15M, firstVersion=1, versionCount=1)",
                      index.toString());
+
+        // test json
         try (StringWriter writer = new StringWriter();
              JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
             index.writeJson(generator);
@@ -44,6 +51,9 @@ public class RegularTimeSeriesIndexTest {
             assertEquals("{\"startTime\":1420070400000,\"endTime\":1420074000000,\"spacing\":900000,\"firstVersion\":1,\"versionCount\":1}",
                          writer.toString());
         }
+
+        // test serializable
+        SerializableTester.reserializeAndAssert(index);
     }
 
     @Test

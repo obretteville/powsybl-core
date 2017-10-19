@@ -46,6 +46,11 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
     }
 
     @Override
+    public TimeSeriesDataType getDataType() {
+        return TimeSeriesDataType.DOUBLE;
+    }
+
+    @Override
     public void fillArray(double[] array) {
         Objects.requireNonNull(array);
         int k = 0;

@@ -16,11 +16,15 @@ import java.util.Objects;
  */
 public abstract class AbstractCompressedArrayChunk {
 
-    protected final int offset;
+    protected int offset;
 
-    protected final int uncompressedLength;
+    protected int uncompressedLength;
 
-    protected final int[] stepLengths;
+    protected int[] stepLengths;
+
+    protected AbstractCompressedArrayChunk() {
+        this(0, 0, new int[] {});
+    }
 
     public AbstractCompressedArrayChunk(int offset, int uncompressedLength, int[] stepLengths) {
         this.offset = offset;
@@ -44,12 +48,28 @@ public abstract class AbstractCompressedArrayChunk {
         }
     }
 
+    public int getOffset() {
+        return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
+    }
+
     public int[] getStepLengths() {
         return stepLengths;
     }
 
-    public int getOffset() {
-        return offset;
+    public void setStepLengths(int[] stepLengths) {
+        this.stepLengths = Objects.requireNonNull(stepLengths);
+    }
+
+    public int getUncompressedLength() {
+        return uncompressedLength;
+    }
+
+    public void setUncompressedLength(int uncompressedLength) {
+        this.uncompressedLength = uncompressedLength;
     }
 
     public int getLength() {

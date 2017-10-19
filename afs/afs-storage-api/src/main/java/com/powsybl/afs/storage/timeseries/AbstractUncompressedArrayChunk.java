@@ -9,13 +9,18 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public abstract class AbstractUncompressedArrayChunk {
+public abstract class AbstractUncompressedArrayChunk implements Serializable {
 
-    protected final int offset;
+    protected int offset;
+
+    protected AbstractUncompressedArrayChunk() {
+        this(0);
+    }
 
     public AbstractUncompressedArrayChunk(int offset) {
         this.offset = offset;
@@ -23,6 +28,10 @@ public abstract class AbstractUncompressedArrayChunk {
 
     public int getOffset() {
         return offset;
+    }
+
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 
     public boolean isCompressed() {

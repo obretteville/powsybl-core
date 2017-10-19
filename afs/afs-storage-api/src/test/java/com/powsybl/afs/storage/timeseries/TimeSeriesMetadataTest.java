@@ -9,6 +9,7 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.testing.SerializableTester;
 import org.junit.Test;
 import org.threeten.extra.Interval;
 
@@ -30,10 +31,14 @@ public class TimeSeriesMetadataTest {
                                                                      Duration.ofMinutes(15), 1, 1);
         ImmutableMap<String, String> tags = ImmutableMap.of("var1", "value1");
         TimeSeriesMetadata metadata = new TimeSeriesMetadata("ts1", TimeSeriesDataType.DOUBLE, tags, index);
+
+        // test  getters
         assertEquals("ts1", metadata.getName());
         assertEquals(TimeSeriesDataType.DOUBLE, metadata.getDataType());
         assertEquals(tags, metadata.getTags());
         assertSame(index, metadata.getIndex());
+
+        // test json
         try (StringWriter writer = new StringWriter();
              JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
             metadata.writeJson(generator);
@@ -41,5 +46,8 @@ public class TimeSeriesMetadataTest {
             assertEquals("{\"name\":\"ts1\",\"dataType\":\"DOUBLE\",\"tags\":[{\"var1\":\"value1\"}],\"index\":{\"startTime\":1420070400000,\"endTime\":1420074000000,\"spacing\":900000,\"firstVersion\":1,\"versionCount\":1}}",
                          writer.toString());
         }
+
+        // test serializable
+        SerializableTester.reserializeAndAssert(metadata);
     }
 }

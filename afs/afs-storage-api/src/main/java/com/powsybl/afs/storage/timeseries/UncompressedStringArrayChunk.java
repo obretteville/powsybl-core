@@ -56,6 +56,11 @@ public class UncompressedStringArrayChunk extends AbstractUncompressedArrayChunk
     }
 
     @Override
+    public TimeSeriesDataType getDataType() {
+        return TimeSeriesDataType.STRING;
+    }
+
+    @Override
     public void fillArray(String[] array) {
         System.arraycopy(values, 0, array, offset, values.length);
     }

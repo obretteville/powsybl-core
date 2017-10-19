@@ -64,6 +64,11 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
     }
 
     @Override
+    public TimeSeriesDataType getDataType() {
+        return TimeSeriesDataType.STRING;
+    }
+
+    @Override
     public void fillArray(String[] array) {
         Objects.requireNonNull(array);
         int k = 0;
