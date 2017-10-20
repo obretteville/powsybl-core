@@ -6,14 +6,12 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.collect.ImmutableList;
+import com.powsybl.commons.json.JsonUtil;
 import org.junit.Test;
 import org.threeten.extra.Interval;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.stream.Collectors;
@@ -37,12 +35,12 @@ public class StringArrayChunkTest {
         String[] array = new String[4];
         chunk.fillArray(array);
         assertArrayEquals(new String[] {null, "a", "b", "c"}, array);
-        try (StringWriter writer = new StringWriter();
-             JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
-            chunk.writeJson(generator);
-            generator.flush();
-            assertEquals("{\"offset\":1,\"values\":[\"a\",\"b\",\"c\"]}", writer.toString());
-        }
+        String jsonRef = String.join(System.lineSeparator(),
+                "{",
+                "  \"offset\" : 1,",
+                "  \"values\" : [ \"a\", \"b\", \"c\" ]",
+                "}");
+        assertEquals(jsonRef, JsonUtil.toJson(chunk::writeJson));
         RegularTimeSeriesIndex index = RegularTimeSeriesIndex.create(Interval.parse("2015-01-01T00:00:00Z/2015-01-01T00:45:00Z"),
                                                                      Duration.ofMinutes(15), 1, 1);
         assertEquals(ImmutableList.of(new StringPoint(1, Instant.parse("2015-01-01T00:15:00Z").toEpochMilli(), "a"),
@@ -67,12 +65,14 @@ public class StringArrayChunkTest {
         String[] array = new String[7];
         compressedChunk.fillArray(array);
         assertArrayEquals(new String[] {null, "aaa", "bbb", "bbb", "bbb", "bbb", "ccc"}, array);
-        try (StringWriter writer = new StringWriter();
-             JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
-            compressedChunk.writeJson(generator);
-            generator.flush();
-            assertEquals("{\"offset\":1,\"uncompressedLength\":6,\"stepValues\":[\"aaa\",\"bbb\",\"ccc\"],\"stepLengths\":[1,4,1]}", writer.toString());
-        }
+        String jsonRef = String.join(System.lineSeparator(),
+                "{",
+                "  \"offset\" : 1,",
+                "  \"uncompressedLength\" : 6,",
+                "  \"stepValues\" : [ \"aaa\", \"bbb\", \"ccc\" ],",
+                "  \"stepLengths\" : [ 1, 4, 1 ]",
+                "}");
+        assertEquals(jsonRef, JsonUtil.toJson(compressedChunk::writeJson));
         RegularTimeSeriesIndex index = RegularTimeSeriesIndex.create(Interval.parse("2015-01-01T00:00:00Z/2015-01-01T01:30:00Z"),
                                                                      Duration.ofMinutes(15), 1, 1);
         assertEquals(ImmutableList.of(new StringPoint(1, Instant.parse("2015-01-01T00:15:00Z").toEpochMilli(), "aaa"),

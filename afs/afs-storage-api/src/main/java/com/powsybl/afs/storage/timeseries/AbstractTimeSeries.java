@@ -6,15 +6,13 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.powsybl.afs.storage.AfsStorageException;
+import com.powsybl.commons.json.JsonUtil;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -93,32 +91,27 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
         return fillGap().stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
     }
 
-    public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeStartObject();
-        generator.writeFieldName("metadata");
-        metadata.writeJson(generator);
-        generator.writeFieldName("chunks");
-        generator.writeStartArray();
-        for (C chunk : chunks) {
-            chunk.writeJson(generator);
-        }
-        generator.writeEndArray();
-        generator.writeEndObject();
-    }
-
-    public void writeJson(BufferedWriter writer) throws IOException {
-        JsonFactory factory = new JsonFactory();
-        try (JsonGenerator generator = factory.createGenerator(writer)) {
-            generator.useDefaultPrettyPrinter();
-            writeJson(generator);
-        }
-    }
-
-    public void writeJson(Path file) {
-        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-            writeJson(writer);
+    public void writeJson(JsonGenerator generator) {
+        try {
+            metadata.writeJson(generator);
+            generator.writeFieldName("chunks");
+            generator.writeStartArray();
+            for (C chunk : chunks) {
+                generator.writeStartObject();
+                chunk.writeJson(generator);
+                generator.writeEndObject();
+            }
+            generator.writeEndArray();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public void writeJson(BufferedWriter writer) {
+        JsonUtil.writeJson(writer, this::writeJson);
+    }
+
+    public void writeJson(Path file) {
+        JsonUtil.writeJson(file, this::writeJson);
     }
 }

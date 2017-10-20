@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -52,21 +53,25 @@ public class TimeSeriesMetadata implements Serializable {
         return index;
     }
 
-    public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeStartObject();
-        generator.writeStringField("name", name);
-        generator.writeStringField("dataType", dataType.name());
-        generator.writeFieldName("tags");
-        generator.writeStartArray();
-        for (Map.Entry<String, String> e : tags.entrySet()) {
+    public void writeJson(JsonGenerator generator) {
+        try {
+            generator.writeFieldName("metadata");
             generator.writeStartObject();
-            generator.writeStringField(e.getKey(), e.getValue());
+            generator.writeStringField("name", name);
+            generator.writeStringField("dataType", dataType.name());
+            generator.writeFieldName("tags");
+            generator.writeStartArray();
+            for (Map.Entry<String, String> e : tags.entrySet()) {
+                generator.writeStartObject();
+                generator.writeStringField(e.getKey(), e.getValue());
+                generator.writeEndObject();
+            }
+            generator.writeEndArray();
+            index.writeJson(generator);
             generator.writeEndObject();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-        generator.writeEndArray();
-        generator.writeFieldName("index");
-        index.writeJson(generator);
-        generator.writeEndObject();
     }
 
     @Override

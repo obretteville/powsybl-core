@@ -6,11 +6,16 @@
  */
 package com.powsybl.commons.json;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Strings;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * @author Mathieu Bague <mathieu.bague@rte-france.com>
@@ -18,6 +23,39 @@ import java.util.Objects;
 public final class JsonUtil {
 
     private JsonUtil() {
+    }
+
+    public static void writeJson(Writer writer, Consumer<JsonGenerator> consumer) {
+        Objects.requireNonNull(writer);
+        Objects.requireNonNull(consumer);
+        JsonFactory factory = new JsonFactory();
+        try (JsonGenerator generator = factory.createGenerator(writer)) {
+            generator.useDefaultPrettyPrinter();
+            generator.writeStartObject();
+            consumer.accept(generator);
+            generator.writeEndObject();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static String toJson(Consumer<JsonGenerator> consumer) {
+        try (StringWriter writer = new StringWriter()) {
+            writeJson(writer, consumer);
+            return writer.toString();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static void writeJson(Path file, Consumer<JsonGenerator> consumer) {
+        Objects.requireNonNull(file);
+        Objects.requireNonNull(consumer);
+        try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
+            writeJson(writer, consumer);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static void writeOptionalStringField(JsonGenerator jsonGenerator, String fieldName, String value) throws IOException {

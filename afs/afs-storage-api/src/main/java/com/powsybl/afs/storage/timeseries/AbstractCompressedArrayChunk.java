@@ -9,6 +9,7 @@ package com.powsybl.afs.storage.timeseries;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 
 /**
@@ -90,14 +91,16 @@ public abstract class AbstractCompressedArrayChunk {
 
     protected abstract void writeStepValuesJson(JsonGenerator generator) throws IOException;
 
-    public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeStartObject();
-        generator.writeNumberField("offset", offset);
-        generator.writeNumberField("uncompressedLength", uncompressedLength);
-        generator.writeFieldName("stepValues");
-        writeStepValuesJson(generator);
-        generator.writeFieldName("stepLengths");
-        generator.writeArray(stepLengths, 0, stepLengths.length);
-        generator.writeEndObject();
+    public void writeJson(JsonGenerator generator) {
+        try {
+            generator.writeNumberField("offset", offset);
+            generator.writeNumberField("uncompressedLength", uncompressedLength);
+            generator.writeFieldName("stepValues");
+            writeStepValuesJson(generator);
+            generator.writeFieldName("stepLengths");
+            generator.writeArray(stepLengths, 0, stepLengths.length);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

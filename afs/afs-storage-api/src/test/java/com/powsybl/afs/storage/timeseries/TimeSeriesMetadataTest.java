@@ -6,15 +6,13 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.testing.SerializableTester;
+import com.powsybl.commons.json.JsonUtil;
 import org.junit.Test;
 import org.threeten.extra.Interval;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
@@ -39,13 +37,24 @@ public class TimeSeriesMetadataTest {
         assertSame(index, metadata.getIndex());
 
         // test json
-        try (StringWriter writer = new StringWriter();
-             JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
-            metadata.writeJson(generator);
-            generator.flush();
-            assertEquals("{\"name\":\"ts1\",\"dataType\":\"DOUBLE\",\"tags\":[{\"var1\":\"value1\"}],\"index\":{\"startTime\":1420070400000,\"endTime\":1420074000000,\"spacing\":900000,\"firstVersion\":1,\"versionCount\":1}}",
-                         writer.toString());
-        }
+        String jsonRef = String.join(System.lineSeparator(),
+                "{",
+                "  \"metadata\" : {",
+                "    \"name\" : \"ts1\",",
+                "    \"dataType\" : \"DOUBLE\",",
+                "    \"tags\" : [ {",
+                "      \"var1\" : \"value1\"",
+                "    } ],",
+                "    \"regularIndex\" : {",
+                "      \"startTime\" : 1420070400000,",
+                "      \"endTime\" : 1420074000000,",
+                "      \"spacing\" : 900000,",
+                "      \"firstVersion\" : 1,",
+                "      \"versionCount\" : 1",
+                "    }",
+                "  }",
+                "}");
+        assertEquals(jsonRef, JsonUtil.toJson(metadata::writeJson));
 
         // test serializable
         SerializableTester.reserializeAndAssert(metadata);

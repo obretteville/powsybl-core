@@ -6,13 +6,11 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
+import com.powsybl.commons.json.JsonUtil;
 import org.junit.Test;
 import org.threeten.extra.Interval;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -39,12 +37,25 @@ public class StoredDoubleTimeSeriesTest {
                                              new DoublePoint(3, Instant.parse("2015-01-01T00:45:00Z").toEpochMilli(), 2d),
                                              new DoublePoint(4, Instant.parse("2015-01-01T01:00:00Z").toEpochMilli(), Double.NaN)},
                           timeSeries.stream().toArray());
-        try (StringWriter writer = new StringWriter();
-             JsonGenerator generator = new JsonFactory().createGenerator(writer)) {
-            timeSeries.writeJson(generator);
-            generator.flush();
-            assertEquals("{\"metadata\":{\"name\":\"ts1\",\"dataType\":\"DOUBLE\",\"tags\":[],\"index\":{\"startTime\":1420070400000,\"endTime\":1420074000000,\"spacing\":900000,\"firstVersion\":1,\"versionCount\":1}},\"chunks\":[{\"offset\":2,\"values\":[1.0,2.0]}]}",
-                         writer.toString());
-        }
+        String jsonRef = String.join(System.lineSeparator(),
+                "{",
+                "  \"metadata\" : {",
+                "    \"name\" : \"ts1\",",
+                "    \"dataType\" : \"DOUBLE\",",
+                "    \"tags\" : [ ],",
+                "    \"regularIndex\" : {",
+                "      \"startTime\" : 1420070400000,",
+                "      \"endTime\" : 1420074000000,",
+                "      \"spacing\" : 900000,",
+                "      \"firstVersion\" : 1,",
+                "      \"versionCount\" : 1",
+                "    }",
+                "  },",
+                "  \"chunks\" : [ {",
+                "    \"offset\" : 2,",
+                "    \"values\" : [ 1.0, 2.0 ]",
+                "  } ]",
+                "}");
+        assertEquals(jsonRef, JsonUtil.toJson(timeSeries::writeJson));
     }
 }

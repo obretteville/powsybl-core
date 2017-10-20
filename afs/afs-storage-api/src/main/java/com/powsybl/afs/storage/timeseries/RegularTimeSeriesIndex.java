@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import org.threeten.extra.Interval;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -98,14 +99,19 @@ public class RegularTimeSeriesIndex implements TimeSeriesIndex {
     }
 
     @Override
-    public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeStartObject();
-        generator.writeNumberField("startTime", startTime);
-        generator.writeNumberField("endTime", endTime);
-        generator.writeNumberField("spacing", spacing);
-        generator.writeNumberField("firstVersion", firstVersion);
-        generator.writeNumberField("versionCount", versionCount);
-        generator.writeEndObject();
+    public void writeJson(JsonGenerator generator) {
+        try {
+            generator.writeFieldName("regularIndex");
+            generator.writeStartObject();
+            generator.writeNumberField("startTime", startTime);
+            generator.writeNumberField("endTime", endTime);
+            generator.writeNumberField("spacing", spacing);
+            generator.writeNumberField("firstVersion", firstVersion);
+            generator.writeNumberField("versionCount", versionCount);
+            generator.writeEndObject();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

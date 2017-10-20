@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -44,11 +45,13 @@ public abstract class AbstractUncompressedArrayChunk implements Serializable {
 
     protected abstract void writeValuesJson(JsonGenerator generator) throws IOException;
 
-    public void writeJson(JsonGenerator generator) throws IOException {
-        generator.writeStartObject();
-        generator.writeNumberField("offset", offset);
-        generator.writeFieldName("values");
-        writeValuesJson(generator);
-        generator.writeEndObject();
+    public void writeJson(JsonGenerator generator) {
+        try {
+            generator.writeNumberField("offset", offset);
+            generator.writeFieldName("values");
+            writeValuesJson(generator);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }

@@ -8,7 +8,6 @@ package com.powsybl.afs.storage.timeseries;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -24,5 +23,5 @@ public interface TimeSeriesIndex extends Serializable {
 
     long getTimeAt(int point);
 
-    void writeJson(JsonGenerator generator) throws IOException;
+    void writeJson(JsonGenerator generator);
 }
