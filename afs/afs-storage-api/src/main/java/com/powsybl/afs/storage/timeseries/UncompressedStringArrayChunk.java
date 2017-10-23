@@ -11,6 +11,7 @@ import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -95,6 +96,25 @@ public class UncompressedStringArrayChunk extends AbstractUncompressedArrayChunk
     public Stream<StringPoint> stream(TimeSeriesIndex index) {
         Objects.requireNonNull(index);
         return IntStream.range(0, values.length).mapToObj(i -> new StringPoint(offset + i, index.getTimeAt(offset + i), values[i]));
+    }
+
+    @Override
+    public Iterator<StringPoint> iterator(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
+        return new Iterator<StringPoint>() {
+
+            private int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < values.length;
+            }
+
+            @Override
+            public StringPoint next() {
+                return new StringPoint(offset + i, index.getTimeAt(offset + i), values[i]);
+            }
+        };
     }
 
     @Override

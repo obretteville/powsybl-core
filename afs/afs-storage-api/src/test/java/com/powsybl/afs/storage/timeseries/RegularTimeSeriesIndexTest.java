@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -52,7 +53,11 @@ public class RegularTimeSeriesIndexTest {
                 "    \"versionCount\" : 1",
                 "  }",
                 "}");
-        assertEquals(jsonRef, JsonUtil.toJson(index::writeJson));
+        String json = JsonUtil.toJson(index::writeJson);
+        assertEquals(jsonRef, json);
+        TimeSeriesIndex index2 = JsonUtil.parseJson(json, TimeSeriesIndex::parseJson);
+        assertTrue(index2 instanceof RegularTimeSeriesIndex);
+        assertEquals(index, index2);
 
         // test serializable
         SerializableTester.reserializeAndAssert(index);

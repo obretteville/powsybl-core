@@ -8,9 +8,9 @@ package com.powsybl.afs.storage.timeseries;
 
 import com.powsybl.afs.storage.AfsStorageException;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -19,11 +19,14 @@ public interface DoubleTimeSeries extends TimeSeries<DoublePoint> {
 
     double[] toArray();
 
-    static Stream<DoublePoint> stream(List<DoubleTimeSeries> timeSeriesList) {
+    static Iterator<DoubleMultiPoint> iterator(List<DoubleTimeSeries> timeSeriesList) {
         Objects.requireNonNull(timeSeriesList);
+
         if (timeSeriesList.isEmpty()) {
-            return Stream.empty();
+            return Collections.emptyIterator();
         }
+
+        // check index unicity
         long indexCount = timeSeriesList.stream().map(DoubleTimeSeries::getMetadata)
                                                  .map(TimeSeriesMetadata::getIndex)
                                                  .distinct()
@@ -31,6 +34,79 @@ public interface DoubleTimeSeries extends TimeSeries<DoublePoint> {
         if (indexCount > 1) {
             throw new AfsStorageException("Time series must have the same index");
         }
-        throw new UnsupportedOperationException("TODO"); // TODO
+
+        class DoublePointExt {
+
+            private final DoublePoint point;
+
+            private final int timeSeriesNum;
+
+            DoublePointExt(DoublePoint point, int timeSeriesNum) {
+                this.point = point;
+                this.timeSeriesNum = timeSeriesNum;
+            }
+
+            public DoublePoint getPoint() {
+                return point;
+            }
+
+            public int getTimeSeriesNum() {
+                return timeSeriesNum;
+            }
+        }
+
+        Map<Integer, List<DoublePointExt>> points = new TreeMap<>();
+        for (int timeSeriesNum = 0; timeSeriesNum < timeSeriesList.size(); timeSeriesNum++) {
+            DoubleTimeSeries timeSeries = timeSeriesList.get(timeSeriesNum);
+            for (DoublePoint point : timeSeries) {
+                points.computeIfAbsent(point.getIndex(), key -> new ArrayList<>())
+                        .add(new DoublePointExt(point, timeSeriesNum));
+            }
+        }
+
+        Iterator<Map.Entry<Integer, List<DoublePointExt>>> it = points.entrySet().iterator();
+
+        return new Iterator<DoubleMultiPoint>() {
+
+            private final double[] values = new double[timeSeriesList.size()];
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public DoubleMultiPoint next() {
+                Map.Entry<Integer, List<DoublePointExt>> e = it.next();
+
+                // update values
+                for (DoublePointExt point : e.getValue()) {
+                    values[point.getTimeSeriesNum()] = point.getPoint().getValue();
+                }
+
+                return new DoubleMultiPoint() {
+                    @Override
+                    public int getIndex() {
+                        return e.getKey();
+                    }
+
+                    @Override
+                    public long getTime() {
+                        return e.getValue().get(0).getPoint().getTime();
+                    }
+
+                    @Override
+                    public double getValue(int timeSeriesNum) {
+                        return values[timeSeriesNum];
+                    }
+                };
+            }
+        };
+    }
+
+    static Stream<DoubleMultiPoint> stream(List<DoubleTimeSeries> timeSeriesList) {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
+                iterator(timeSeriesList),
+                Spliterator.ORDERED | Spliterator.IMMUTABLE), false);
     }
 }

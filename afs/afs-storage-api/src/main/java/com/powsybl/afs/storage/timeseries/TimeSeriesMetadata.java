@@ -7,11 +7,15 @@
 package com.powsybl.afs.storage.timeseries;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.google.common.collect.ImmutableMap;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,6 +33,10 @@ public class TimeSeriesMetadata implements Serializable {
     private final Map<String, String> tags;
 
     private final TimeSeriesIndex index;
+
+    public TimeSeriesMetadata(String name, TimeSeriesDataType dataType, TimeSeriesIndex index) {
+        this(name, dataType, ImmutableMap.of(), index);
+    }
 
     public TimeSeriesMetadata(String name, TimeSeriesDataType dataType, Map<String, String> tags, TimeSeriesIndex index) {
         this.name = Objects.requireNonNull(name);
@@ -69,6 +77,57 @@ public class TimeSeriesMetadata implements Serializable {
             generator.writeEndArray();
             index.writeJson(generator);
             generator.writeEndObject();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    static TimeSeriesMetadata parseJson(JsonParser parser) {
+        try {
+            String name = null;
+            TimeSeriesDataType dataType = null;
+            Map<String, String> tags = new HashMap<>();
+            TimeSeriesIndex index = null;
+            boolean insideTags = false;
+            JsonToken token;
+            while ((token = parser.nextToken()) != null) {
+                if (token == JsonToken.FIELD_NAME) {
+                    String fieldName = parser.getCurrentName();
+                    switch (fieldName) {
+                        case "metadata":
+                            break;
+                        case "name":
+                            name = parser.nextTextValue();
+                            break;
+                        case "dataType":
+                            dataType = TimeSeriesDataType.valueOf(parser.nextTextValue());
+                            break;
+                        case "tags":
+                            insideTags = true;
+                            break;
+                        case "regularIndex":
+                            index = RegularTimeSeriesIndex.parseJson(parser);
+                            break;
+                        default:
+                            if (insideTags) {
+                                tags.put(fieldName, parser.nextTextValue());
+                            } else {
+                                throw new IllegalStateException("Unexpected field name " + fieldName);
+                            }
+                    }
+                } else if (token == JsonToken.END_OBJECT) {
+                    if (insideTags) {
+                        insideTags = false;
+                    } else {
+                        if (name == null || dataType == null || index == null) {
+                            throw new IllegalStateException("Incomplete time series metadata json");
+                        } else {
+                            return new TimeSeriesMetadata(name, dataType, tags, index);
+                        }
+                    }
+                }
+            }
+            throw new IllegalStateException();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

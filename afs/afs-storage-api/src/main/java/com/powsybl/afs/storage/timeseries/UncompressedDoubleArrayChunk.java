@@ -11,6 +11,7 @@ import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -82,6 +83,25 @@ public class UncompressedDoubleArrayChunk extends AbstractUncompressedArrayChunk
     public Stream<DoublePoint> stream(TimeSeriesIndex index) {
         Objects.requireNonNull(index);
         return IntStream.range(0, values.length).mapToObj(i -> new DoublePoint(offset + i, index.getTimeAt(offset + i), values[i]));
+    }
+
+    @Override
+    public Iterator<DoublePoint> iterator(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
+        return new Iterator<DoublePoint>() {
+
+            private int i = 0;
+
+            @Override
+            public boolean hasNext() {
+                return i < values.length;
+            }
+
+            @Override
+            public DoublePoint next() {
+                return new DoublePoint(offset + i, index.getTimeAt(offset + i), values[i]);
+            }
+        };
     }
 
     @Override

@@ -80,7 +80,9 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
         }
     }
 
-    private Iterator<StringPoint> iterator(TimeSeriesIndex index) {
+    @Override
+    public Iterator<StringPoint> iterator(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
         return new Iterator<StringPoint>() {
 
             private int i = offset;
@@ -103,7 +105,6 @@ public class CompressedStringArrayChunk extends AbstractCompressedArrayChunk imp
 
     @Override
     public Stream<StringPoint> stream(TimeSeriesIndex index) {
-        Objects.requireNonNull(index);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 iterator(index),
                 Spliterator.ORDERED | Spliterator.IMMUTABLE), false);

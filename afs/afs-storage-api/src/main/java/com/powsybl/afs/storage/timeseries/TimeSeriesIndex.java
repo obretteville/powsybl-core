@@ -7,8 +7,12 @@
 package com.powsybl.afs.storage.timeseries;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.UncheckedIOException;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -24,4 +28,23 @@ public interface TimeSeriesIndex extends Serializable {
     long getTimeAt(int point);
 
     void writeJson(JsonGenerator generator);
+
+    static TimeSeriesIndex parseJson(JsonParser parser) {
+        try {
+            JsonToken token;
+            while ((token = parser.nextToken()) != null) {
+                if (token == JsonToken.START_OBJECT) {
+                    String fieldName = parser.nextFieldName();
+                    if ("regularIndex".equals(fieldName)) {
+                        return RegularTimeSeriesIndex.parseJson(parser);
+                    } else {
+                        throw new IllegalStateException("Unknown index type " + fieldName);
+                    }
+                }
+            }
+            return null;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 }

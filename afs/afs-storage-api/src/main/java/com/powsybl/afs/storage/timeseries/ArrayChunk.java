@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.stream.Stream;
 
 /**
@@ -59,6 +60,13 @@ public interface ArrayChunk<P extends AbstractPoint> extends Serializable {
      * @return a point stream
      */
     Stream<P> stream(TimeSeriesIndex index);
+
+    /**
+     * Get a point iterator.
+     * @param index the time series index
+     * @return a point iterator
+     */
+    Iterator<P> iterator(TimeSeriesIndex index);
 
     /**
      * Serialize this array chunk to json.

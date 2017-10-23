@@ -29,6 +29,11 @@ import java.util.function.BiFunction;
  */
 public class MapDbAppFileSystemStorage implements AppFileSystemStorage {
 
+    public static MapDbAppFileSystemStorage createMem(String fileSystemName) {
+        DBMaker.Maker maker = DBMaker.memoryDB();
+        return new MapDbAppFileSystemStorage(fileSystemName, maker, maker::make);
+    }
+
     public static MapDbAppFileSystemStorage createHeap(String fileSystemName) {
         DBMaker.Maker maker = DBMaker.heapDB();
         return new MapDbAppFileSystemStorage(fileSystemName, maker, maker::make);

@@ -6,23 +6,14 @@
  */
 package com.powsybl.afs.storage.timeseries;
 
-import java.io.Writer;
-import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.stream.Stream;
-
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public interface TimeSeries<P extends AbstractPoint> extends Iterable<P> {
+public interface DoubleMultiPoint {
 
-    TimeSeriesMetadata getMetadata();
+    int getIndex();
 
-    Stream<P> stream();
+    long getTime();
 
-    Iterator<P> iterator();
-
-    void writeJson(Writer writer);
-
-    void writeJson(Path file);
+    double getValue(int timeSeriesNum);
 }

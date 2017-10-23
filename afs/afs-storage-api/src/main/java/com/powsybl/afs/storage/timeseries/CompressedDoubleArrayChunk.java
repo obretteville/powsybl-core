@@ -62,7 +62,9 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
         }
     }
 
-    private Iterator<DoublePoint> iterator(TimeSeriesIndex index) {
+    @Override
+    public Iterator<DoublePoint> iterator(TimeSeriesIndex index) {
+        Objects.requireNonNull(index);
         return new Iterator<DoublePoint>() {
 
             private int i = offset;
@@ -85,7 +87,6 @@ public class CompressedDoubleArrayChunk extends AbstractCompressedArrayChunk imp
 
     @Override
     public Stream<DoublePoint> stream(TimeSeriesIndex index) {
-        Objects.requireNonNull(index);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(
                 iterator(index),
                 Spliterator.ORDERED | Spliterator.IMMUTABLE), false);

@@ -17,6 +17,7 @@ import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -54,7 +55,11 @@ public class TimeSeriesMetadataTest {
                 "    }",
                 "  }",
                 "}");
-        assertEquals(jsonRef, JsonUtil.toJson(metadata::writeJson));
+        String json = JsonUtil.toJson(metadata::writeJson);
+        assertEquals(jsonRef, json);
+        TimeSeriesMetadata metadata2 = JsonUtil.parseJson(json, TimeSeriesMetadata::parseJson);
+        assertTrue(metadata2 instanceof TimeSeriesMetadata);
+        assertEquals(metadata, metadata2);
 
         // test serializable
         SerializableTester.reserializeAndAssert(metadata);

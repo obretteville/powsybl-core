@@ -7,12 +7,13 @@
 package com.powsybl.afs.storage.timeseries;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.common.collect.Iterators;
 import com.powsybl.afs.storage.AfsStorageException;
 import com.powsybl.commons.json.JsonUtil;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -67,7 +68,7 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
             }
 
             // check all values are included in index range
-            if (i + chunk.getLength() > pointCount - 1) {
+            if (i + chunk.getLength() > pointCount) {
                 throw new AfsStorageException("Chunk value at " + (i + chunk.getLength()) + " is out of index range [" +
                         (pointCount - 1) + ", " + (i + chunk.getLength()) + "]");
             }
@@ -91,6 +92,10 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
         return fillGap().stream().flatMap(chunk -> chunk.stream(metadata.getIndex()));
     }
 
+    public Iterator<P> iterator() {
+        return Iterators.concat(fillGap().stream().map(c -> c.iterator(metadata.getIndex())).collect(Collectors.toList()).iterator());
+    }
+
     public void writeJson(JsonGenerator generator) {
         try {
             metadata.writeJson(generator);
@@ -107,7 +112,7 @@ public abstract class AbstractTimeSeries<P extends AbstractPoint, C extends Arra
         }
     }
 
-    public void writeJson(BufferedWriter writer) {
+    public void writeJson(Writer writer) {
         JsonUtil.writeJson(writer, this::writeJson);
     }
 

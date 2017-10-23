@@ -7,6 +7,8 @@
 package com.powsybl.afs.storage.timeseries;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import org.threeten.extra.Interval;
 
 import java.io.IOException;
@@ -46,6 +48,49 @@ public class RegularTimeSeriesIndex implements TimeSeriesIndex {
     public static RegularTimeSeriesIndex create(Interval interval, Duration spacing, int firstVersion, int versionCount) {
         return new RegularTimeSeriesIndex(interval.getStart().toEpochMilli(), interval.getEnd().toEpochMilli(),
                                           spacing.toMillis(), firstVersion, versionCount);
+    }
+
+    public static RegularTimeSeriesIndex parseJson(JsonParser parser) {
+        JsonToken token;
+        try {
+            long startTime = -1;
+            long endTime = -1;
+            long spacing = -1;
+            int firstVersion = -1;
+            int versionCount = -1;
+            while ((token = parser.nextToken()) != null) {
+                if (token == JsonToken.FIELD_NAME) {
+                    String fieldName = parser.getCurrentName();
+                    switch (fieldName) {
+                        case "startTime":
+                            startTime = parser.nextLongValue(-1);
+                            break;
+                        case "endTime":
+                            endTime = parser.nextLongValue(-1);
+                            break;
+                        case "spacing":
+                            spacing = parser.nextLongValue(-1);
+                            break;
+                        case "firstVersion":
+                            firstVersion = parser.nextIntValue(-1);
+                            break;
+                        case "versionCount":
+                            versionCount = parser.nextIntValue(-1);
+                            break;
+                        default:
+                            throw new IllegalStateException("Unexpected field " + fieldName);
+                    }
+                } else if (token == JsonToken.END_OBJECT) {
+                    if (startTime == -1 || endTime == -1 || spacing == -1 || firstVersion == -1 || versionCount == -1) {
+                        throw new IllegalStateException("Incomplete regular time series index json");
+                    }
+                    return new RegularTimeSeriesIndex(startTime, endTime, spacing, firstVersion, versionCount);
+                }
+            }
+            return null;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public long getStartTime() {
