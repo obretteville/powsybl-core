@@ -9,6 +9,7 @@ package com.powsybl.action.simulator.loadflow;
 import com.powsybl.action.dsl.*;
 import com.powsybl.action.dsl.ast.*;
 import com.powsybl.action.simulator.ActionSimulator;
+import com.powsybl.action.simulator.ActionSimulatorConfig;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.exceptions.UncheckedIllegalAccessException;
 import com.powsybl.commons.exceptions.UncheckedInstantiationException;
@@ -45,22 +46,25 @@ public class LoadFlowActionSimulator implements ActionSimulator {
 
     private final LoadFlowActionSimulatorConfig config;
 
+    private final ActionSimulatorConfig actionSimulatorConfig;
+
     private final List<LoadFlowActionSimulatorObserver> observers;
 
     public LoadFlowActionSimulator(Network network, ComputationManager computationManager) {
-        this(network, computationManager, LoadFlowActionSimulatorConfig.load(), Collections.emptyList());
+        this(network, computationManager, LoadFlowActionSimulatorConfig.load(), ActionSimulatorConfig.load(), Collections.emptyList());
     }
 
     public LoadFlowActionSimulator(Network network, ComputationManager computationManager, LoadFlowActionSimulatorConfig config,
-                                   LoadFlowActionSimulatorObserver... observers) {
-        this(network, computationManager, config, Arrays.asList(observers));
+                                   ActionSimulatorConfig actionSimulatorConfig, LoadFlowActionSimulatorObserver... observers) {
+        this(network, computationManager, config, actionSimulatorConfig, Arrays.asList(observers));
     }
 
     public LoadFlowActionSimulator(Network network, ComputationManager computationManager, LoadFlowActionSimulatorConfig config,
-                                   List<LoadFlowActionSimulatorObserver> observers) {
+                                   ActionSimulatorConfig actionSimulatorConfig, List<LoadFlowActionSimulatorObserver> observers) {
         this.network = Objects.requireNonNull(network);
         this.computationManager = Objects.requireNonNull(computationManager);
         this.config = Objects.requireNonNull(config);
+        this.actionSimulatorConfig = Objects.requireNonNull(actionSimulatorConfig);
         this.observers = Objects.requireNonNull(observers);
     }
 
@@ -81,6 +85,14 @@ public class LoadFlowActionSimulator implements ActionSimulator {
         LOGGER.info("Starting pre-contingency analysis");
         observers.forEach(o -> o.beforePreContingencyAnalysis(network));
 
+        boolean allowProperties;
+        if (actionSimulatorConfig.getPropertyMode() == ActionSimulatorConfig.PropertyMode.SAFE) {
+            allowProperties = false;
+        } else {
+            allowProperties = true;
+        }
+        network.getIdentifiables().forEach(identifiable -> identifiable.setAllowProperties(allowProperties));
+
         boolean preContingencyAnalysisOk = next(actionDb, new RunningContext(network));
 
         observers.forEach(LoadFlowActionSimulatorObserver::afterPreContingencyAnalysis);
@@ -95,6 +107,7 @@ public class LoadFlowActionSimulator implements ActionSimulator {
                 observers.forEach(o -> o.beforePostContingencyAnalysis(contingency));
 
                 Network network2 = NetworkXml.gunzip(networkXmlGz);
+                network2.getIdentifiables().forEach(identifiable -> identifiable.setAllowProperties(allowProperties));
 
                 LOGGER.info("Starting post-contingency analysis '{}'", contingency.getId());
                 contingency.toTask().modify(network2, computationManager);

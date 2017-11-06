@@ -115,7 +115,7 @@ public class ActionSimulatorTool implements Tool {
     private ActionSimulator createActionSimulator(Network network, ToolRunningContext context, boolean verbose, Path csvFile) {
         // config
         LoadFlowActionSimulatorConfig config = LoadFlowActionSimulatorConfig.load();
-
+        ActionSimulatorConfig actionSimulatorConfig = ActionSimulatorConfig.load();
         // log print
         LoadFlowActionSimulatorLogPrinter logPrinter = new LoadFlowActionSimulatorLogPrinter(context.getOutputStream(), context.getErrorStream(), verbose);
 
@@ -146,7 +146,7 @@ public class ActionSimulatorTool implements Tool {
             }
         };
 
-        return new LoadFlowActionSimulator(network, context.getComputationManager(), config, logPrinter, securityAnalysisPrinter);
+        return new LoadFlowActionSimulator(network, context.getComputationManager(), config, actionSimulatorConfig, logPrinter, securityAnalysisPrinter);
     }
 
     @Override
@@ -166,17 +166,9 @@ public class ActionSimulatorTool implements Tool {
             throw new PowsyblException("Case " + caseFile + " not found");
         }
 
-        ActionSimulatorConfig config = ActionSimulatorConfig.load();
-        boolean allowProperties;
-        if (config.getPropertyMode() == ActionSimulatorConfig.PropertyMode.SAFE) {
-            allowProperties = false;
-        } else {
-            allowProperties = true;
-        }
-
         try {
             // load actions from Groovy DSL
-            ActionDb actionDb = new ActionDslLoader(dslFile.toFile(), allowProperties)
+            ActionDb actionDb = new ActionDslLoader(dslFile.toFile())
                     .load(network, new DefaultActionDslLoaderObserver() {
                         @Override
                         public void begin(String dslFile) {

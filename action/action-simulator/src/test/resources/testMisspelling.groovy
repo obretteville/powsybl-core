@@ -4,18 +4,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-
-rule ('test') {
-    when !contingencyOccurred()
-    life 1
-    apply 'misspelling'
+rule('rule1') {
+    when line('NHV1_NHV2_2').terminal1.i > 50 || line('NHV1_NHV2_2').overloaded
+    apply 'action1'
 }
 
-action ('misspelling') {
+action('action1') {
+    description 'hello'
     tasks {
         script {
-            generator('GEN').targetP = 42
-            generator('GEN').targettP = 24
+            load('LOAD').p00 = 42
         }
     }
 }

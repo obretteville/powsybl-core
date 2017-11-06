@@ -6,12 +6,15 @@
  */
 package com.powsybl.action.simulator;
 
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import com.powsybl.action.dsl.ActionDb;
 import com.powsybl.action.dsl.ActionDslLoader;
 import com.powsybl.action.simulator.loadflow.DefaultLoadFlowActionSimulatorObserver;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulator;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulatorConfig;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulatorObserver;
+import com.powsybl.commons.config.InMemoryPlatformConfig;
 import com.powsybl.computation.ComputationManager;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.loadflow.LoadFlow;
@@ -25,6 +28,7 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.FileSystem;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -45,6 +49,15 @@ public abstract class AbstractLoadFlowRulesEngineTest {
 
     protected abstract String getDslFile();
 
+    protected ActionSimulatorConfig getActionSimulatorConfig() throws Exception {
+        try (FileSystem fileSystem = Jimfs.newFileSystem(Configuration.unix())) {
+            InMemoryPlatformConfig platformConfig = new InMemoryPlatformConfig(fileSystem);
+            // missing action-simulator module
+            ActionSimulatorConfig config = ActionSimulatorConfig.load(platformConfig);
+            return config;
+        }
+    }
+
     @Before
     public void setUp() throws Exception {
         network = createNetwork();
@@ -62,7 +75,7 @@ public abstract class AbstractLoadFlowRulesEngineTest {
         LoadFlowActionSimulatorObserver observer = createObserver();
         GroovyCodeSource src = new GroovyCodeSource(new InputStreamReader(getClass().getResourceAsStream(getDslFile())), "test", GroovyShell.DEFAULT_CODE_BASE);
         actionDb = new ActionDslLoader(src).load(network);
-        engine = new LoadFlowActionSimulator(network, computationManager, new LoadFlowActionSimulatorConfig(LoadFlowFactory.class, 3, false), observer) {
+        engine = new LoadFlowActionSimulator(network, computationManager, new LoadFlowActionSimulatorConfig(LoadFlowFactory.class, 3, false), getActionSimulatorConfig(), observer) {
             @Override
             protected LoadFlowFactory newLoadFlowFactory() {
                 return loadFlowFactory;

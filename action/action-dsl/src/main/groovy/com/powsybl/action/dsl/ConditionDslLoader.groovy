@@ -40,18 +40,6 @@ class ConditionDslLoader extends DslLoader implements DslConstants {
         super(script)
     }
 
-    ConditionDslLoader(GroovyCodeSource dslSrc, boolean allowProperties) {
-        super(dslSrc, allowProperties)
-    }
-
-    ConditionDslLoader(File dslFile, boolean allowProperties) {
-        super(dslFile, allowProperties)
-    }
-
-    ConditionDslLoader(String script, boolean allowProperties) {
-        super(script, allowProperties)
-    }
-
     private static Line getLine(Network network, String id) {
         Line l = network.getLine(id)
         if (l == null) {
