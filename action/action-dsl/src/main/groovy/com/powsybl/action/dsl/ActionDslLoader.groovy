@@ -97,6 +97,18 @@ class ActionDslLoader extends DslLoader {
         super(script)
     }
 
+    ActionDslLoader(GroovyCodeSource dslSrc, boolean allowProperties) {
+        super(dslSrc, allowProperties)
+    }
+
+    ActionDslLoader(File dslFile, boolean allowProperties) {
+        super(dslFile, allowProperties)
+    }
+
+    ActionDslLoader(String script, boolean allowProperties) {
+        super(script, allowProperties)
+    }
+
     ActionDb load(Network network) {
         load(network, null)
     }
@@ -108,6 +120,10 @@ class ActionDslLoader extends DslLoader {
             observer?.begin(dslSrc.getName())
 
             Binding binding = new Binding()
+
+            for (Identifiable idenfialbe : network.identifiables) {
+                idenfialbe.setAllowProperties(super.allowProperties)
+            }
 
             // contingencies
             binding.contingency = { String id, Closure<Void> closure ->

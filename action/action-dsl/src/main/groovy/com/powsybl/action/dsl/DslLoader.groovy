@@ -17,16 +17,31 @@ class DslLoader {
 
     protected final GroovyCodeSource dslSrc
 
-    DslLoader(GroovyCodeSource dslSrc) {
+    protected final boolean allowProperties
+
+    DslLoader(GroovyCodeSource dslSrc, boolean allowProperties) {
         this.dslSrc = Objects.requireNonNull(dslSrc)
+        this.allowProperties = allowProperties;
+    }
+
+    DslLoader(File dslFile, boolean allowProperties) {
+        this(new GroovyCodeSource(dslFile), allowProperties)
+    }
+
+    DslLoader(String script, boolean allowProperties) {
+        this(new GroovyCodeSource(script, "script", GroovyShell.DEFAULT_CODE_BASE), allowProperties)
+    }
+
+    DslLoader(GroovyCodeSource dslSrc) {
+        this(dslSrc, false);
     }
 
     DslLoader(File dslFile) {
-        this(new GroovyCodeSource(dslFile))
+        this(dslFile, false)
     }
 
     DslLoader(String script) {
-        this(new GroovyCodeSource(script, "script", GroovyShell.DEFAULT_CODE_BASE))
+        this(script, false)
     }
 
     static GroovyShell createShell(Binding binding) {

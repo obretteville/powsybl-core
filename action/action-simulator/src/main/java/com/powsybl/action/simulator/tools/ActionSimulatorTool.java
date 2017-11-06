@@ -11,6 +11,7 @@ import com.powsybl.action.dsl.DefaultActionDslLoaderObserver;
 import com.powsybl.action.dsl.ActionDb;
 import com.powsybl.action.dsl.ActionDslLoader;
 import com.powsybl.action.simulator.ActionSimulator;
+import com.powsybl.action.simulator.ActionSimulatorConfig;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulator;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulatorConfig;
 import com.powsybl.action.simulator.loadflow.LoadFlowActionSimulatorLogPrinter;
@@ -165,9 +166,17 @@ public class ActionSimulatorTool implements Tool {
             throw new PowsyblException("Case " + caseFile + " not found");
         }
 
+        ActionSimulatorConfig config = ActionSimulatorConfig.load();
+        boolean allowProperties;
+        if (config.getPropertyMode() == ActionSimulatorConfig.PropertyMode.SAFE) {
+            allowProperties = false;
+        } else {
+            allowProperties = true;
+        }
+
         try {
             // load actions from Groovy DSL
-            ActionDb actionDb = new ActionDslLoader(dslFile.toFile())
+            ActionDb actionDb = new ActionDslLoader(dslFile.toFile(), allowProperties)
                     .load(network, new DefaultActionDslLoaderObserver() {
                         @Override
                         public void begin(String dslFile) {
