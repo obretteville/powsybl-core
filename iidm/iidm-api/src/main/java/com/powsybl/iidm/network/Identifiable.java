@@ -34,6 +34,10 @@ public interface Identifiable<I extends Identifiable<I>> {
      */
     String getName();
 
+    void setAllowProperties(boolean b);
+
+    boolean isAllowProperties();
+
     /**
      * Check that this object has some properties.
      */

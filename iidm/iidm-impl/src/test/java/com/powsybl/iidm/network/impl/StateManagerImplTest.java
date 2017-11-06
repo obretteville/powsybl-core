@@ -49,6 +49,15 @@ public class StateManagerImplTest {
         }
 
         @Override
+        public void setAllowProperties(boolean b) {
+        }
+
+        @Override
+        public boolean isAllowProperties() {
+            return true;
+        }
+
+        @Override
         public boolean hasProperty() {
             return false;
         }

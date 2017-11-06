@@ -22,6 +22,8 @@ abstract class AbstractIdentifiable<I extends Identifiable<I>> implements Identi
 
     protected Properties properties;
 
+    protected boolean allowProperties = true;
+
     protected final Map<Class<?>, Extension<I>> extensions = new HashMap<>();
 
     protected final Map<String, Extension<I>> extensionsByName = new HashMap<>();
@@ -46,6 +48,16 @@ abstract class AbstractIdentifiable<I extends Identifiable<I>> implements Identi
     @Override
     public String getMessageHeader() {
         return getTypeDescription() + " '" + id + "': ";
+    }
+
+    @Override
+    public void setAllowProperties(boolean b) {
+        allowProperties = b;
+    }
+
+    @Override
+    public boolean isAllowProperties() {
+        return allowProperties;
     }
 
     @Override

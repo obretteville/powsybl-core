@@ -6,6 +6,8 @@
  */
 package com.powsybl.iidm.network
 
+import com.powsybl.commons.PowsyblException
+
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
@@ -18,6 +20,9 @@ class IdentifiableExtension {
     }
 
     static void propertyMissing(Identifiable self, String name, Object value) {
-        self.properties[name] = value
+        if (self.isAllowProperties())
+            self.properties[name] = value
+        else
+            throw new PowsyblException(self.toString() + " has no " + name + " property")
     }
 }
